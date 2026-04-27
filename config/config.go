@@ -21,6 +21,12 @@ type Config struct {
 
 	ResetTokenExpiryMinutes int
 
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPassword string
+	SMTPFrom     string
+
 	ServerPort string
 }
 
@@ -42,6 +48,11 @@ func Load() {
 		JWTSecret:               getEnv("JWT_SECRET", "default-secret-change-me"),
 		JWTExpiryHours:          getEnvInt("JWT_EXPIRY_HOURS", 24),
 		ResetTokenExpiryMinutes: getEnvInt("RESET_TOKEN_EXPIRY_MINUTES", 15),
+		SMTPHost:                getEnv("SMTP_HOST", ""),
+		SMTPPort:                getEnv("SMTP_PORT", "587"),
+		SMTPUser:                getEnv("SMTP_USER", ""),
+		SMTPPassword:            getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:                getEnv("SMTP_FROM", ""),
 		ServerPort:              getEnv("SERVER_PORT", "8080"),
 	}
 }

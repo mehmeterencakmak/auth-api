@@ -43,9 +43,15 @@ func migrate() {
 		password_hash TEXT NOT NULL,
 		reset_token TEXT,
 		reset_token_expires_at TIMESTAMP,
+		email_verified BOOLEAN DEFAULT FALSE,
+		email_verification_token TEXT,
+		email_verification_expires_at TIMESTAMP,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_token TEXT;
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMP;
 	`
 	if _, err := DB.Exec(query); err != nil {
 		log.Fatalf("Tablo oluşturulamadı: %v", err)

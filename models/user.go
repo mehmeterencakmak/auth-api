@@ -14,14 +14,17 @@ type Claims struct {
 }
 
 type User struct {
-	ID                  int        `json:"id"`
-	Username            string     `json:"username"`
-	Email               string     `json:"email"`
-	PasswordHash        string     `json:"-"`
-	ResetToken          *string    `json:"-"`
-	ResetTokenExpiresAt *time.Time `json:"-"`
-	CreatedAt           time.Time  `json:"created_at"`
-	UpdatedAt           time.Time  `json:"updated_at"`
+	ID                          int        `json:"id"`
+	Username                    string     `json:"username"`
+	Email                       string     `json:"email"`
+	PasswordHash                string     `json:"-"`
+	EmailVerified               bool       `json:"email_verified"`
+	EmailVerificationToken      *string    `json:"-"`
+	EmailVerificationExpiresAt  *time.Time `json:"-"`
+	ResetToken                  *string    `json:"-"`
+	ResetTokenExpiresAt         *time.Time `json:"-"`
+	CreatedAt                   time.Time  `json:"created_at"`
+	UpdatedAt                   time.Time  `json:"updated_at"`
 }
 
 // --- Request Body modelleri ---
@@ -53,4 +56,13 @@ type ForgotPasswordRequest struct {
 type ResetPasswordRequest struct {
 	Token       string `json:"token" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+type VerifyEmailRequest struct {
+	Token string `json:"token" binding:"required"`
+}
+
+type ChangePasswordViaEmailRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	OldPassword string `json:"old_password" binding:"required"`
 }

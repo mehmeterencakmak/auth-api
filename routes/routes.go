@@ -21,8 +21,11 @@ func Setup(r *gin.Engine) {
 			public.POST("/register", handlers.Register)
 			public.POST("/login", handlers.Login)
 			public.POST("/guest", handlers.Guest)
+			public.POST("/verify-email", handlers.VerifyEmail)
+			public.POST("/resend-verification", handlers.ResendVerification)
 			public.POST("/forgot-password", handlers.ForgotPassword)
 			public.POST("/reset-password", handlers.ResetPassword)
+			public.POST("/change-password-email", handlers.ChangePasswordViaEmail)
 		}
 
 		// --- Private endpoint'ler (Bearer token gerekir) ---
