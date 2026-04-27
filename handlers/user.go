@@ -18,9 +18,9 @@ func Me(c *gin.Context) {
 	userID := c.GetInt("user_id")
 
 	var user models.User
-	query := `SELECT id, username, email, created_at, updated_at FROM users WHERE id = $1`
+	query := `SELECT id, username, email, email_verified, created_at, updated_at FROM users WHERE id = $1`
 	err := database.DB.QueryRow(query, userID).
-		Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Username, &user.Email, &user.EmailVerified, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		utils.JSONError(c, http.StatusNotFound, "Kullanıcı bulunamadı")
 		return
@@ -44,8 +44,9 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	var currentHash string
-	err := database.DB.QueryRow(`SELECT password_hash FROM users WHERE id = $1`, userID).Scan(&currentHash)
+	var currentHash, email, username string
+	err := database.DB.QueryRow(`SELECT password_hash, email, username FROM users WHERE id = $1`, userID).
+		Scan(&currentHash, &email, &username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			utils.JSONError(c, http.StatusNotFound, "Kullanıcı bulunamadı")
@@ -74,6 +75,9 @@ func ChangePassword(c *gin.Context) {
 		utils.JSONError(c, http.StatusInternalServerError, "Şifre güncellenemedi")
 		return
 	}
+
+	body := "Merhaba " + username + ",\n\nHesabının şifresi başarıyla değiştirildi.\n\nEğer bu işlemi sen yapmadıysan lütfen hemen bizimle iletişime geç."
+	_ = utils.SendEmail(email, "Şifre Değiştirildi", body)
 
 	utils.JSONSuccess(c, http.StatusOK, "Şifre başarıyla güncellendi", nil)
 }

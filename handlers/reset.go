@@ -26,15 +26,14 @@ func ForgotPassword(c *gin.Context) {
 	}
 
 	var userID int
+	var username string
 	err := database.DB.QueryRow(
-		`SELECT id FROM users WHERE email = $1`,
+		`SELECT id, username FROM users WHERE email = $1`,
 		strings.ToLower(req.Email),
-	).Scan(&userID)
+	).Scan(&userID, &username)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Güvenlik açısından "kullanıcı yok" demiyoruz, generic mesaj döneriz.
-			// Ama bu mini projede öğrenme amaçlı net mesaj veriyoruz.
 			utils.JSONError(c, http.StatusNotFound, "Bu email ile kayıtlı kullanıcı bulunamadı")
 			return
 		}
@@ -59,11 +58,13 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	utils.JSONSuccess(c, http.StatusOK, "Şifre sıfırlama tokenı üretildi", gin.H{
-		"reset_token": resetToken,
-		"expires_at":  expiry,
-		"note":        "Gerçek uygulamada bu token email ile gönderilirdi. Test için doğrudan döndük.",
-	})
+	body := fmt.Sprintf(
+		"Merhaba %s,\n\nŞifre sıfırlama talebinde bulundun. Aşağıdaki token'ı kullanarak şifreni sıfırlayabilirsin:\n\n%s\n\nPOST /api/v1/auth/reset-password\n{ \"token\": \"%s\", \"new_password\": \"yeni_sifren\" }\n\nToken %d dakika geçerlidir. Bu talebi sen yapmadıysan bu emaili dikkate alma.",
+		username, resetToken, resetToken, config.AppConfig.ResetTokenExpiryMinutes,
+	)
+	_ = utils.SendEmail(req.Email, "Şifre Sıfırlama", body)
+
+	utils.JSONSuccess(c, http.StatusOK, "Şifre sıfırlama bağlantısı emailine gönderildi", nil)
 }
 
 // ChangePasswordViaEmail email + mevcut şifreyi doğrular, yeni rastgele şifre üretip emaile gönderir
@@ -143,11 +144,12 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	var userID int
+	var username, email string
 	var expiresAt time.Time
 	err := database.DB.QueryRow(
-		`SELECT id, reset_token_expires_at FROM users WHERE reset_token = $1`,
+		`SELECT id, username, email, reset_token_expires_at FROM users WHERE reset_token = $1`,
 		req.Token,
-	).Scan(&userID, &expiresAt)
+	).Scan(&userID, &username, &email, &expiresAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -170,7 +172,7 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	_, err = database.DB.Exec(
-		`UPDATE users 
+		`UPDATE users
 		 SET password_hash = $1, reset_token = NULL, reset_token_expires_at = NULL, updated_at = NOW()
 		 WHERE id = $2`,
 		newHash, userID,
@@ -179,6 +181,12 @@ func ResetPassword(c *gin.Context) {
 		utils.JSONError(c, http.StatusInternalServerError, "Şifre güncellenemedi")
 		return
 	}
+
+	body := fmt.Sprintf(
+		"Merhaba %s,\n\nŞifren başarıyla sıfırlandı. Artık yeni şifrenle giriş yapabilirsin.\n\nEğer bu işlemi sen yapmadıysan lütfen hemen bizimle iletişime geç.",
+		username,
+	)
+	_ = utils.SendEmail(email, "Şifren Sıfırlandı", body)
 
 	utils.JSONSuccess(c, http.StatusOK, "Şifre başarıyla sıfırlandı, artık yeni şifrenle giriş yapabilirsin", nil)
 }
