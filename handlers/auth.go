@@ -50,8 +50,14 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	token, err := utils.GenerateToken(userID, req.Username)
+	if err != nil {
+		utils.JSONError(c, http.StatusInternalServerError, "Token üretilemedi")
+		return
+	}
+
 	utils.JSONSuccess(c, http.StatusCreated, "Kayıt başarılı", gin.H{
-		"user_id":  userID,
+		"token":    token,
 		"username": req.Username,
 		"email":    req.Email,
 	})
